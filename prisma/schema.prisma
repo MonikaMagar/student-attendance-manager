@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  mobile    String?
+  role      UserRole @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  batches    BatchStudent[]
+  attendance Attendance[]
+
+  @@map("users")
+}
+
+model Batch {
+  id        String   @id @default(cuid())
+  name      String
+  startTime DateTime
+  endTime   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  students  BatchStudent[]
+  attendance Attendance[]
+
+  @@map("batches")
+}
+
+model BatchStudent {
+  id       String @id @default(cuid())
+  batchId  String
+  studentId String
+
+  batch   Batch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([batchId, studentId])
+  @@map("batch_students")
+}
+
+model Attendance {
+  id        String   @id @default(cuid())
+  studentId String
+  batchId   String
+  date      DateTime
+  status    AttendanceStatus @default(PRESENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  batch   Batch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, batchId, date])
+  @@map("attendance")
+}
+
+enum UserRole {
+  TEACHER
+  STUDENT
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+}
